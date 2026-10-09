@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  mock-llm:
+    build:
+      context: .
+      dockerfile: Dockerfile.mock
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  exercise:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    environment:
+      - LLM_API_BASE=http://mock-llm:8080
+      - LLM_API_KEY=mock-key-not-needed
+    depends_on:
+      mock-llm:
+        condition: service_healthy
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
